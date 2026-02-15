@@ -30,22 +30,15 @@ jobs:
 
     - name: Install Android SDK and NDK
       run: |
-        # Create Android SDK directory
         mkdir -p ~/Android/Sdk
-        
-        # Download and install Android Command Line Tools
         cd ~/Android/Sdk
         wget https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip
         unzip commandlinetools-linux-6514223_latest.zip
         rm commandlinetools-linux-6514223_latest.zip
-        
-        # Move to cmdline-tools/latest
         mkdir -p cmdline-tools/latest
         mv cmdline-tools/bin cmdline-tools/latest/
         mv cmdline-tools/lib cmdline-tools/latest/
         mv cmdline-tools/source.properties cmdline-tools/latest/
-        
-        # Download and install Android NDK
         wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
         unzip android-ndk-r25b-linux.zip
         rm android-ndk-r25b-linux.zip
@@ -53,12 +46,9 @@ jobs:
 
     - name: Build Android App
       run: |
-        # Set environment variables
         export ANDROID_HOME=~/Android/Sdk
         export ANDROID_NDK_HOME=~/Android/Sdk/ndk/25.2.9519653
         export PATH=$PATH:~/Android/Sdk/cmdline-tools/latest/bin:~/Android/Sdk/platform-tools
-        
-        # Build the app
         buildozer android debug
 
     - name: Upload APK
