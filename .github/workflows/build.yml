@@ -37,29 +37,46 @@ jobs:
         wget https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip
         unzip commandlinetools-linux-6514223_latest.zip
         rm commandlinetools-linux-6514223_latest.zip
-        # 检查cmdline-tools目录结构
+        
+        # 检查cmdline-tools目录结构并设置正确的路径
         if [ -d "cmdline-tools/tools" ]; then
           # 新的目录结构：cmdline-tools/tools/bin
           mkdir -p cmdline-tools/latest
           mv cmdline-tools/tools/* cmdline-tools/latest/
+          SDKMANAGER_PATH="~/Android/Sdk/cmdline-tools/latest/bin/sdkmanager"
         elif [ -d "cmdline-tools/bin" ]; then
           # 旧的目录结构：cmdline-tools/bin
           mkdir -p cmdline-tools/latest
           mv cmdline-tools/bin cmdline-tools/latest/
           mv cmdline-tools/lib cmdline-tools/latest/
           mv cmdline-tools/source.properties cmdline-tools/latest/
+          SDKMANAGER_PATH="~/Android/Sdk/cmdline-tools/latest/bin/sdkmanager"
+        else
+          # 直接检查bin目录
+          if [ -d "cmdline-tools/bin" ]; then
+            SDKMANAGER_PATH="~/Android/Sdk/cmdline-tools/bin/sdkmanager"
+          else
+            # 查找sdkmanager可执行文件
+            SDKMANAGER_PATH=$(find ~/Android/Sdk -name "sdkmanager" -type f | head -1)
+          fi
         fi
+        
+        # 确保sdkmanager是可执行的
+        chmod +x $SDKMANAGER_PATH
+        
+        # 下载并安装Android NDK
         wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
         unzip android-ndk-r25b-linux.zip
         rm android-ndk-r25b-linux.zip
+        
         # 先创建ndk目录，然后再移动
         mkdir -p ndk
         mv android-ndk-r25b ndk/25.2.9519653
-        # 使用sdkmanager安装必要的SDK组件
-        export PATH=$PATH:~/Android/Sdk/cmdline-tools/latest/bin
-        # 接受许可证并安装build-tools和platform-tools
-        yes | sdkmanager --licenses
-        sdkmanager "build-tools;33.0.0" "platform-tools" "platforms;android-33"
+        
+        # 使用绝对路径执行sdkmanager，安装必要的SDK组件
+        echo "使用sdkmanager路径: $SDKMANAGER_PATH"
+        yes | $SDKMANAGER_PATH --licenses
+        $SDKMANAGER_PATH "build-tools;33.0.0" "platform-tools" "platforms;android-33"
 
     - name: Build Android App
       run: |
