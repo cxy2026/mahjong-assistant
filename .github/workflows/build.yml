@@ -52,6 +52,8 @@ jobs:
         wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
         unzip android-ndk-r25b-linux.zip
         rm android-ndk-r25b-linux.zip
+        # 先创建ndk目录，然后再移动
+        mkdir -p ndk
         mv android-ndk-r25b ndk/25.2.9519653
 
     - name: Build Android App
