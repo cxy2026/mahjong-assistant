@@ -55,12 +55,17 @@ jobs:
         # 先创建ndk目录，然后再移动
         mkdir -p ndk
         mv android-ndk-r25b ndk/25.2.9519653
+        # 使用sdkmanager安装必要的SDK组件
+        export PATH=$PATH:~/Android/Sdk/cmdline-tools/latest/bin
+        # 接受许可证并安装build-tools和platform-tools
+        yes | sdkmanager --licenses
+        sdkmanager "build-tools;33.0.0" "platform-tools" "platforms;android-33"
 
     - name: Build Android App
       run: |
         export ANDROID_HOME=~/Android/Sdk
         export ANDROID_NDK_HOME=~/Android/Sdk/ndk/25.2.9519653
-        export PATH=$PATH:~/Android/Sdk/cmdline-tools/latest/bin:~/Android/Sdk/platform-tools
+        export PATH=$PATH:~/Android/Sdk/cmdline-tools/latest/bin:~/Android/Sdk/platform-tools:~/Android/Sdk/build-tools/33.0.0
         buildozer android debug
 
     - name: Upload APK
