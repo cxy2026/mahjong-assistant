@@ -28,7 +28,7 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        # 先尝试使用官方PyPI安装Buildozer，确保能找到包
+        # 先使用官方PyPI安装Buildozer
         python -m pip install --upgrade pip
         pip install buildozer
         # 然后使用清华镜像源安装其他依赖
@@ -38,11 +38,10 @@ jobs:
       run: |
         # 设置环境变量
         export ANDROID_HOME=$HOME/Android/Sdk
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.0
         
         # 创建必要的目录
         mkdir -p $ANDROID_HOME
-        mkdir -p $ANDROID_HOME/cmdline-tools
+        mkdir -p $ANDROID_HOME/cmdline-tools/latest
         mkdir -p $ANDROID_HOME/platform-tools
         mkdir -p $ANDROID_HOME/build-tools
         mkdir -p $ANDROID_HOME/ndk
@@ -53,15 +52,23 @@ jobs:
         unzip -q commandlinetools-linux-6514223_latest.zip
         rm commandlinetools-linux-6514223_latest.zip
         
-        # 整理cmdline-tools目录
+        # 智能处理cmdline-tools目录结构
         if [ -d "cmdline-tools/tools" ]; then
-          mv cmdline-tools/tools cmdline-tools/latest
-        elif [ ! -d "cmdline-tools/latest" ]; then
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools/bin cmdline-tools/latest/
-          mv cmdline-tools/lib cmdline-tools/latest/
-          mv cmdline-tools/source.properties cmdline-tools/latest/
+          # 新结构：cmdline-tools/tools/bin
+          mv cmdline-tools/tools/* cmdline-tools/latest/
+        elif [ -d "cmdline-tools/bin" ]; then
+          # 旧结构：cmdline-tools/bin
+          mv cmdline-tools/* cmdline-tools/latest/
+        else
+          # 其他结构：直接查看所有文件
+          find cmdline-tools -type f -name "sdkmanager" | head -1 | xargs -I {} cp {} cmdline-tools/latest/bin/ 2>/dev/null || true
         fi
+        
+        # 确保bin目录存在
+        mkdir -p $ANDROID_HOME/cmdline-tools/latest/bin
+        
+        # 设置PATH
+        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.0
         
         # 自动接受许可证
         echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
@@ -78,6 +85,7 @@ jobs:
         # 验证安装
         echo "=== SDK 安装验证 ==="
         ls -la $ANDROID_HOME/
+        ls -la $ANDROID_HOME/cmdline-tools/latest/
         ls -la $ANDROID_HOME/cmdline-tools/latest/bin/
         ls -la $ANDROID_HOME/build-tools/
         ls -la $ANDROID_HOME/platform-tools/
