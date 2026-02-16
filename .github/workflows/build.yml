@@ -22,83 +22,17 @@ jobs:
 
     - name: Install system dependencies
       run: |
-        # 使用阿里云Ubuntu镜像源
-        sudo sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
         sudo apt update && sudo apt install -y git zip unzip openjdk-11-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev
 
     - name: Install Python dependencies
       run: |
-        # 先使用官方PyPI安装Buildozer
         python -m pip install --upgrade pip
-        pip install buildozer
-        # 然后使用清华镜像源安装其他依赖
-        pip install --default-timeout=100 --index-url=https://pypi.tuna.tsinghua.edu.cn/simple appdirs colorama>=0.3.3 jinja2 'sh>=1.10,<2.0' build toml packaging setuptools cython
+        pip install buildozer appdirs colorama>=0.3.3 jinja2 'sh>=1.10,<2.0' build toml packaging setuptools cython
 
-    - name: Setup Android SDK
+    - name: Build with Buildozer
       run: |
-        # 设置环境变量
-        export ANDROID_HOME=$HOME/Android/Sdk
-        
-        # 创建必要的目录
-        mkdir -p $ANDROID_HOME
-        mkdir -p $ANDROID_HOME/cmdline-tools/latest
-        mkdir -p $ANDROID_HOME/platform-tools
-        mkdir -p $ANDROID_HOME/build-tools
-        mkdir -p $ANDROID_HOME/ndk
-        
-        # 下载并安装Android Command Line Tools
-        cd $ANDROID_HOME
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip
-        unzip -q commandlinetools-linux-6514223_latest.zip
-        rm commandlinetools-linux-6514223_latest.zip
-        
-        # 智能处理cmdline-tools目录结构
-        if [ -d "cmdline-tools/tools" ]; then
-          # 新结构：cmdline-tools/tools/bin
-          mv cmdline-tools/tools/* cmdline-tools/latest/
-        elif [ -d "cmdline-tools/bin" ]; then
-          # 旧结构：cmdline-tools/bin
-          mv cmdline-tools/* cmdline-tools/latest/
-        else
-          # 其他结构：直接查看所有文件
-          find cmdline-tools -type f -name "sdkmanager" | head -1 | xargs -I {} cp {} cmdline-tools/latest/bin/ 2>/dev/null || true
-        fi
-        
-        # 确保bin目录存在
-        mkdir -p $ANDROID_HOME/cmdline-tools/latest/bin
-        
-        # 设置PATH
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.0
-        
-        # 自动接受许可证
-        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
-        
-        # 安装必要的SDK组件
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
-        
-        # 下载并安装Android NDK
-        wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-        unzip -q android-ndk-r25b-linux.zip
-        rm android-ndk-r25b-linux.zip
-        mv android-ndk-r25b ndk/25.2.9519653
-        
-        # 验证安装
-        echo "=== SDK 安装验证 ==="
-        ls -la $ANDROID_HOME/
-        ls -la $ANDROID_HOME/cmdline-tools/latest/
-        ls -la $ANDROID_HOME/cmdline-tools/latest/bin/
-        ls -la $ANDROID_HOME/build-tools/
-        ls -la $ANDROID_HOME/platform-tools/
-        echo "=== SDK 安装验证完成 ==="
-
-    - name: Build Android App
-      run: |
-        # 设置环境变量
-        export ANDROID_HOME=$HOME/Android/Sdk
-        export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk/25.2.9519653
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.0
-        
-        # 构建应用
+        # 让Buildozer自动处理SDK和NDK的下载和安装
+        # 这是最可靠的方法，避免手动处理目录结构
         buildozer android debug
 
     - name: Upload APK
