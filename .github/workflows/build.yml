@@ -30,60 +30,56 @@ jobs:
         python -m pip install --upgrade pip --default-timeout=100 --index-url=https://pypi.tuna.tsinghua.edu.cn/simple
         pip install --default-timeout=100 --index-url=https://pypi.tuna.tsinghua.edu.cn/simple buildozer appdirs colorama>=0.3.3 jinja2 'sh>=1.10,<2.0' build toml packaging setuptools cython
 
-    - name: Install Android SDK and NDK
+    - name: Create simplified build script
       run: |
+        # 创建一个简化的构建脚本
+        cat > build_android.sh << 'EOF'
+        #!/bin/bash
+        
+        # 设置环境变量
+        export ANDROID_HOME=~/Android/Sdk
+        export ANDROID_NDK_HOME=~/Android/Sdk/ndk/25.2.9519653
+        
+        # 创建必要的目录
         mkdir -p ~/Android/Sdk
+        mkdir -p ~/Android/Sdk/ndk
+        
+        # 下载并安装Android Command Line Tools
         cd ~/Android/Sdk
-        wget https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip
-        unzip commandlinetools-linux-6514223_latest.zip
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip
+        unzip -q commandlinetools-linux-6514223_latest.zip
         rm commandlinetools-linux-6514223_latest.zip
         
-        # 检查cmdline-tools目录结构并设置正确的路径
+        # 整理cmdline-tools目录
         if [ -d "cmdline-tools/tools" ]; then
-          # 新的目录结构：cmdline-tools/tools/bin
           mkdir -p cmdline-tools/latest
           mv cmdline-tools/tools/* cmdline-tools/latest/
-          SDKMANAGER_PATH="~/Android/Sdk/cmdline-tools/latest/bin/sdkmanager"
-        elif [ -d "cmdline-tools/bin" ]; then
-          # 旧的目录结构：cmdline-tools/bin
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools/bin cmdline-tools/latest/
-          mv cmdline-tools/lib cmdline-tools/latest/
-          mv cmdline-tools/source.properties cmdline-tools/latest/
-          SDKMANAGER_PATH="~/Android/Sdk/cmdline-tools/latest/bin/sdkmanager"
-        else
-          # 直接检查bin目录
-          if [ -d "cmdline-tools/bin" ]; then
-            SDKMANAGER_PATH="~/Android/Sdk/cmdline-tools/bin/sdkmanager"
-          else
-            # 查找sdkmanager可执行文件
-            SDKMANAGER_PATH=$(find ~/Android/Sdk -name "sdkmanager" -type f | head -1)
-          fi
+          rmdir cmdline-tools/tools
         fi
         
-        # 确保sdkmanager是可执行的
-        chmod +x $SDKMANAGER_PATH
-        
         # 下载并安装Android NDK
-        wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-        unzip android-ndk-r25b-linux.zip
+        wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+        unzip -q android-ndk-r25b-linux.zip
         rm android-ndk-r25b-linux.zip
-        
-        # 先创建ndk目录，然后再移动
-        mkdir -p ndk
         mv android-ndk-r25b ndk/25.2.9519653
         
-        # 使用绝对路径执行sdkmanager，安装必要的SDK组件
-        echo "使用sdkmanager路径: $SDKMANAGER_PATH"
-        yes | $SDKMANAGER_PATH --licenses
-        $SDKMANAGER_PATH "build-tools;33.0.0" "platform-tools" "platforms;android-33"
+        # 设置PATH
+        export PATH=$PATH:~/Android/Sdk/cmdline-tools/latest/bin:~/Android/Sdk/platform-tools
+        
+        # 回到项目目录
+        cd $GITHUB_WORKSPACE
+        
+        # 构建应用
+        buildozer android debug
+        EOF
+        
+        # 使脚本可执行
+        chmod +x build_android.sh
 
     - name: Build Android App
       run: |
-        export ANDROID_HOME=~/Android/Sdk
-        export ANDROID_NDK_HOME=~/Android/Sdk/ndk/25.2.9519653
-        export PATH=$PATH:~/Android/Sdk/cmdline-tools/latest/bin:~/Android/Sdk/platform-tools:~/Android/Sdk/build-tools/33.0.0
-        buildozer android debug
+        # 执行构建脚本
+        ./build_android.sh
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
