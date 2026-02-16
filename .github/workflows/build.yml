@@ -28,8 +28,11 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip --default-timeout=100 --index-url=https://pypi.tuna.tsinghua.edu.cn/simple
-        pip install --default-timeout=100 --index-url=https://pypi.tuna.tsinghua.edu.cn/simple buildozer appdirs colorama>=0.3.3 jinja2 'sh>=1.10,<2.0' build toml packaging setuptools cython
+        # 先尝试使用官方PyPI安装Buildozer，确保能找到包
+        python -m pip install --upgrade pip
+        pip install buildozer
+        # 然后使用清华镜像源安装其他依赖
+        pip install --default-timeout=100 --index-url=https://pypi.tuna.tsinghua.edu.cn/simple appdirs colorama>=0.3.3 jinja2 'sh>=1.10,<2.0' build toml packaging setuptools cython
 
     - name: Setup Android SDK
       run: |
