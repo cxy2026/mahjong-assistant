@@ -17,9 +17,14 @@ jobs:
 
     - name: Build with Docker
       run: |
-        # 使用预配置的Kivy Docker镜像，并自动回答确认问题
+        # 使用预配置的Kivy Docker镜像，禁用root检查
         docker run --rm -v ${PWD}:/home/user/app -w /home/user/app kivy/buildozer:latest \
-          bash -c "echo y | buildozer android debug"
+          bash -c "
+          # 修改Buildozer配置，禁用root检查
+          sed -i 's/self.check_root()/# self.check_root()/' /home/user/venv/lib/python3.12/site-packages/buildozer/__init__.py && \
+          # 执行构建
+          buildozer android debug
+          "
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
