@@ -17,9 +17,9 @@ jobs:
 
     - name: Build with Docker
       run: |
-        # 使用预配置的Kivy Docker镜像，包含所有必要的依赖
+        # 使用预配置的Kivy Docker镜像，并自动回答确认问题
         docker run --rm -v ${PWD}:/home/user/app -w /home/user/app kivy/buildozer:latest \
-          bash -c "buildozer android debug"
+          bash -c "echo y | buildozer android debug"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
